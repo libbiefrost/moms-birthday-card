@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Happy Birthday, Mom!</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Montserrat', sans-serif;
+  overflow: hidden;
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background-image: url('https://assets.ppassets.com/p-3s1Tq7toCDIQ3MfjjLuLix/flyer/backdrop_static/jpeg_large');
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+}
+
+/* ── SCENE ─────────────────────────────── */
+.scene {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 320px;
+}
+
+/* ── CARD SLOT (expands upward as card rises) ─── */
+.card-slot {
+  width: 220px;
+  height: 0;
+  position: relative;
+  overflow: visible;
+  transition: height 0.1s;
+}
+
+.card-scene {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 220px;
+  height: 308px;
+  perspective: 900px;
+  transform: translateX(-50%) translateY(288px);
+  transition: transform 0.9s cubic-bezier(0.22, 0.61, 0.36, 1);
+  z-index: 10;
+}
+
+.card-scene.risen {
+  transform: translateX(-50%) translateY(0);
+}
+
+.card-flip {
+  width: 100%; height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.75s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-flip.flipped { transform: rotateY(180deg); }
+
+.card-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: 0 18px 55px rgba(0,0,0,0.55);
+}
+
+.card-front img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  filter: hue-rotate(218deg) saturate(1.3) brightness(0.82);
+}
+
+.card-back {
+  transform: rotateY(180deg);
+  background-image: url('https://assets.ppassets.com/p-6oGyFJ0eKEkUv0YOfqp5kN/flyer/paper_static/base');
+  background-size: cover;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px;
+  gap: 26px;
+}
+.card-back-top {
+  font-weight: 900; font-size: 11px; letter-spacing: 2px;
+  text-transform: uppercase; color: #d52229;
+  text-align: center; line-height: 1.95;
+}
+.card-back-bottom {
+  font-weight: 900; font-size: 11px; letter-spacing: 2px;
+  text-transform: uppercase; color: #523e98;
+  text-align: center; line-height: 1.95;
+}
+
+/* ── ENVELOPE ─────────────────────────── */
+/* Single cohesive red box — no pink section */
+.envelope {
+  position: relative;
+  width: 320px;
+  cursor: pointer;
+  flex-shrink: 0;
+  z-index: 3; /* sits in front of card so card appears to emerge from inside */
+}
+
+/* The envelope body: solid red, landscape ratio like a real card envelope */
+.env-body {
+  width: 100%;
+  height: 196px;
+  background: #d52229;
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+  /* subtle inner shadow so it reads as a solid object */
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.18), 0 8px 32px rgba(0,0,0,0.35);
+}
+
+/* Fold lines on the envelope face (V-shape from bottom corners to center) */
+.env-body::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg, transparent 49.5%, rgba(0,0,0,0.12) 49.5%, rgba(0,0,0,0.12) 50.5%, transparent 50.5%),
+    linear-gradient(225deg, transparent 49.5%, rgba(0,0,0,0.12) 49.5%, rgba(0,0,0,0.12) 50.5%, transparent 50.5%);
+  pointer-events: none;
+}
+
+/* Postmark: top-right area */
+.env-postmark {
+  position: absolute;
+  top: 18px;
+  right: 90px;
+  width: 44px;
+  height: 44px;
+}
+
+/* USA stamp: top-right corner */
+.env-stamp {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  width: 66px;
+}
+
+/* Flap: triangle sitting on TOP of the env-body, overlapping it */
+.env-flap {
+  position: absolute;
+  top: -1px; /* flush with top of env-body */
+  left: 0;
+  width: 320px;
+  height: 0;
+  /* downward-pointing triangle = flap pointing into envelope */
+  border-left: 160px solid transparent;
+  border-right: 160px solid transparent;
+  border-top: 98px solid #b81920;
+  transform-origin: top center;
+  transform: perspective(500px) rotateX(0deg);
+  transition: transform 0.72s cubic-bezier(0.4, 0, 0.6, 1);
+  z-index: 4;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.25));
+}
+
+.env-flap.open {
+  transform: perspective(500px) rotateX(175deg);
+}
+
+/* ── CONTROLS ─────────────────────────── */
+.controls {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 11px;
+  width: 320px;
+}
+
+.hint {
+  color: rgba(255,255,255,0.85);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 600;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  min-height: 16px;
+  text-align: center;
+}
+
+.flip-btn {
+  padding: 10px 32px;
+  background: rgba(255,255,255,0.14);
+  border: 1.5px solid rgba(255,255,255,0.6);
+  color: white;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  cursor: pointer;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.5s, background 0.2s, transform 0.12s;
+}
+.flip-btn.visible { opacity: 1; pointer-events: auto; }
+.flip-btn:hover { background: rgba(255,255,255,0.26); }
+.flip-btn:active { transform: scale(0.97); }
+</style>
+</head>
+<body>
+
+<div class="backdrop"></div>
+
+<div class="scene">
+
+  <!-- Card (lives above the envelope, starts hidden by translateY) -->
+  <div class="card-slot" id="cardSlot">
+    <div class="card-scene" id="cardScene">
+      <div class="card-flip" id="cardFlip">
+
+        <div class="card-face card-front">
+          <img src="https://assets.ppassets.com/p-6SprRvEiCpBdurKekgXEY7/flyer/media_asset/png_xLarge"
+               alt="Birthday card front" />
+        </div>
+
+        <div class="card-face card-back">
+          <div class="card-back-top">
+            Mom,<br>Happy Birthday!<br>May all your wishes<br>come true.
+          </div>
+          <div class="card-back-bottom">
+            Love,<br>Libbie
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Envelope (single cohesive red piece) -->
+  <div class="envelope" id="envelope">
+
+    <div class="env-body">
+
+      <!-- Postmark SVG -->
+      <div class="env-postmark">
+        <svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg" width="44" height="44">
+          <circle cx="22" cy="22" r="18" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="1.2"/>
+          <circle cx="22" cy="22" r="13" fill="none" stroke="rgba(0,0,0,0.3)" stroke-width="0.8"/>
+          <line x1="40" y1="16" x2="54" y2="16" stroke="rgba(0,0,0,0.3)" stroke-width="1.2"/>
+          <line x1="40" y1="20" x2="56" y2="20" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+          <line x1="40" y1="24" x2="56" y2="24" stroke="rgba(0,0,0,0.25)" stroke-width="1"/>
+          <line x1="40" y1="28" x2="54" y2="28" stroke="rgba(0,0,0,0.3)" stroke-width="1.2"/>
+          <text x="22" y="18" font-family="Georgia,serif" font-size="4.5" fill="rgba(0,0,0,0.5)" text-anchor="middle" letter-spacing="1">NEW YORK</text>
+          <text x="22" y="24" font-family="Georgia,serif" font-size="5" fill="rgba(0,0,0,0.55)" text-anchor="middle" font-weight="bold">2025</text>
+          <text x="22" y="30" font-family="Georgia,serif" font-size="3.8" fill="rgba(0,0,0,0.45)" text-anchor="middle" letter-spacing="0.5">NY 10001</text>
+        </svg>
+      </div>
+
+      <!-- Custom USA stamp (no Paperless Post branding) -->
+      <div class="env-stamp">
+        <svg viewBox="0 0 66 78" xmlns="http://www.w3.org/2000/svg" width="66" height="78">
+          <!-- White base -->
+          <rect x="0" y="0" width="66" height="78" fill="white"/>
+          <!-- Perforations top -->
+          <circle cx="5" cy="0" r="3.5" fill="#d52229"/>
+          <circle cx="14" cy="0" r="3.5" fill="#d52229"/>
+          <circle cx="23" cy="0" r="3.5" fill="#d52229"/>
+          <circle cx="32" cy="0" r="3.5" fill="#d52229"/>
+          <circle cx="41" cy="0" r="3.5" fill="#d52229"/>
+          <circle cx="50" cy="0" r="3.5" fill="#d52229"/>
+          <circle cx="59" cy="0" r="3.5" fill="#d52229"/>
+          <!-- Perforations bottom -->
+          <circle cx="5" cy="78" r="3.5" fill="#d52229"/>
+          <circle cx="14" cy="78" r="3.5" fill="#d52229"/>
+          <circle cx="23" cy="78" r="3.5" fill="#d52229"/>
+          <circle cx="32" cy="78" r="3.5" fill="#d52229"/>
+          <circle cx="41" cy="78" r="3.5" fill="#d52229"/>
+          <circle cx="50" cy="78" r="3.5" fill="#d52229"/>
+          <circle cx="59" cy="78" r="3.5" fill="#d52229"/>
+          <!-- Perforations left -->
+          <circle cx="0" cy="8" r="3.5" fill="#d52229"/>
+          <circle cx="0" cy="19" r="3.5" fill="#d52229"/>
+          <circle cx="0" cy="30" r="3.5" fill="#d52229"/>
+          <circle cx="0" cy="41" r="3.5" fill="#d52229"/>
+          <circle cx="0" cy="52" r="3.5" fill="#d52229"/>
+          <circle cx="0" cy="63" r="3.5" fill="#d52229"/>
+          <!-- Perforations right -->
+          <circle cx="66" cy="8" r="3.5" fill="#d52229"/>
+          <circle cx="66" cy="19" r="3.5" fill="#d52229"/>
+          <circle cx="66" cy="30" r="3.5" fill="#d52229"/>
+          <circle cx="66" cy="41" r="3.5" fill="#d52229"/>
+          <circle cx="66" cy="52" r="3.5" fill="#d52229"/>
+          <circle cx="66" cy="63" r="3.5" fill="#d52229"/>
+          <!-- Inner frame -->
+          <rect x="5" y="5" width="56" height="68" fill="white" stroke="#1a1a1a" stroke-width="0.7"/>
+          <!-- Flag image area: stripes -->
+          <rect x="6" y="6" width="54" height="34" fill="#e0e0e0"/>
+          <rect x="6" y="6" width="54" height="3.2" fill="#555"/>
+          <rect x="6" y="11.6" width="54" height="3.2" fill="#555"/>
+          <rect x="6" y="17.2" width="54" height="3.2" fill="#555"/>
+          <rect x="6" y="22.8" width="54" height="3.2" fill="#555"/>
+          <rect x="6" y="28.4" width="54" height="3.2" fill="#555"/>
+          <rect x="6" y="34" width="54" height="3.2" fill="#555"/>
+          <!-- Canton (star field) -->
+          <rect x="6" y="6" width="22" height="19" fill="#2b2b2b"/>
+          <!-- Stars -->
+          <circle cx="9" cy="9" r="1" fill="white"/>
+          <circle cx="13" cy="9" r="1" fill="white"/>
+          <circle cx="17" cy="9" r="1" fill="white"/>
+          <circle cx="21" cy="9" r="1" fill="white"/>
+          <circle cx="11" cy="12" r="1" fill="white"/>
+          <circle cx="15" cy="12" r="1" fill="white"/>
+          <circle cx="19" cy="12" r="1" fill="white"/>
+          <circle cx="9" cy="15" r="1" fill="white"/>
+          <circle cx="13" cy="15" r="1" fill="white"/>
+          <circle cx="17" cy="15" r="1" fill="white"/>
+          <circle cx="21" cy="15" r="1" fill="white"/>
+          <circle cx="11" cy="18" r="1" fill="white"/>
+          <circle cx="15" cy="18" r="1" fill="white"/>
+          <circle cx="19" cy="18" r="1" fill="white"/>
+          <circle cx="9" cy="21" r="1" fill="white"/>
+          <circle cx="13" cy="21" r="1" fill="white"/>
+          <circle cx="17" cy="21" r="1" fill="white"/>
+          <circle cx="21" cy="21" r="1" fill="white"/>
+          <!-- Text area -->
+          <text x="33" y="51" font-family="Georgia,serif" font-size="10" font-weight="bold" fill="#111" text-anchor="middle" letter-spacing="2">USA</text>
+          <text x="33" y="61" font-family="Georgia,serif" font-size="6.5" fill="#444" text-anchor="middle" letter-spacing="0.8">FOREVER</text>
+          <text x="33" y="70" font-family="Georgia,serif" font-size="4.8" fill="#666" text-anchor="middle" letter-spacing="0.5">UNITED STATES</text>
+        </svg>
+      </div>
+
+    </div><!-- /env-body -->
+
+    <!-- Flap (positioned absolutely over top of env-body) -->
+    <div class="env-flap" id="flap"></div>
+
+  </div><!-- /envelope -->
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="hint" id="hint">Click envelope to open</div>
+    <button class="flip-btn" id="flipBtn" onclick="flipCard()">Flip card</button>
+  </div>
+
+</div><!-- /scene -->
+
+<script>
+const envelope  = document.getElementById('envelope');
+const flap      = document.getElementById('flap');
+const cardScene = document.getElementById('cardScene');
+const cardSlot  = document.getElementById('cardSlot');
+const cardFlip  = document.getElementById('cardFlip');
+const hint      = document.getElementById('hint');
+const flipBtn   = document.getElementById('flipBtn');
+
+let state = 'closed';
+
+envelope.addEventListener('click', () => {
+  if (state === 'closed') open();
+});
+
+function open() {
+  state = 'opening';
+  hint.textContent = '';
+  flap.classList.add('open');
+
+  setTimeout(() => {
+    cardSlot.style.height = '318px';
+    cardScene.classList.add('risen');
+  }, 600);
+
+  setTimeout(() => {
+    state = 'open';
+    flipBtn.classList.add('visible');
+    cardFlip.style.cursor = 'pointer';
+  }, 1550);
+}
+
+function flipCard() {
+  if (state !== 'open') return;
+  cardFlip.classList.toggle('flipped');
+}
+
+cardFlip.addEventListener('click', flipCard);
+</script>
+</body>
+</html>
